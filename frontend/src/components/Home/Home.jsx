@@ -3,23 +3,37 @@ import { Link } from 'react-router-dom';
 import './Home.css';
 
 const Home = () => {
+    // Estados principales
     const [publicaciones, setPublicaciones] = useState([]);
+    const [config, setConfig] = useState({ fotoHero: '' });
     const [cargando, setCargando] = useState(true);
 
+    // Carga de datos iniciales (Noticias y Configuración Visual)
     useEffect(() => {
-        const obtenerNoticias = async () => {
+        const obtenerDatos = async () => {
             try {
-                const respuesta = await fetch('http://localhost:4000/api/publicaciones');
-                const data = await respuesta.json();
-                setPublicaciones(data);
+                // Obtener publicaciones
+                const resNoticias = await fetch('http://localhost:4000/api/publicaciones');
+                const dataNoticias = await resNoticias.json();
+                setPublicaciones(dataNoticias);
+
+                // Obtener configuración (Imagen de portada)
+                const resConfig = await fetch('http://localhost:4000/api/configuracion');
+                if (resConfig.ok) {
+                    const dataConfig = await resConfig.json();
+                    if (dataConfig && dataConfig.fotoHero) {
+                        setConfig(dataConfig);
+                    }
+                }
+
                 setCargando(false);
             } catch (error) {
-                console.error("Error al cargar las noticias:", error);
+                console.error("Error en la carga de datos iniciales:", error);
                 setCargando(false);
             }
         };
 
-        obtenerNoticias();
+        obtenerDatos();
     }, []);
 
     const formatearFecha = (fechaMongo) => {
@@ -27,8 +41,7 @@ const Home = () => {
         return new Date(fechaMongo).toLocaleDateString('es-CR', opciones);
     };
 
-    // 🚨 Datos de prueba para la nueva sección de Talleres 🚨
-    // Más adelante, esto vendrá de la base de datos
+    // Datos estáticos temporales para la sección de Talleres
     const talleres = [
         { id: 1, icono: '🎓', titulo: 'Capacitación Comunitaria', descripcion: 'Cursos de tecnología, emprendimiento y desarrollo personal.' },
         { id: 2, icono: '💡', titulo: 'Innovación Social', descripcion: 'Iniciativas colaborativas para el bienestar económico de la comunidad.' },
@@ -40,10 +53,9 @@ const Home = () => {
 
     return (
         <div className="home-container">
-            {/* 🚨 1. NAVBAR PROFESIONAL (Basado en referencias) 🚨 */}
+            {/* Navegación Principal */}
             <nav className="navbar">
                 <div className="navbar-brand">
-                    {/* 👇 Aquí iría tu logo real `/assets/logo-adi.png` */}
                     <div className="logo-placeholder">ADI</div> 
                     <span className="brand-text">Desarrollo Integral</span>
                 </div>
@@ -52,12 +64,18 @@ const Home = () => {
                 </Link>
             </nav>
 
-            {/* 🚨 2. SECCIÓN HÉROE CON FOTO (Basado en references) 🚨 */}
+            {/* Sección de Portada (Hero) */}
             <header className="hero-section">
-                {/* 👇 Aquí iría tu foto del pueblo real `/assets/hero-pueblo.jpg` */}
-                <div className="hero-image-placeholder">
-                    <span>Espacio para foto del pueblo / salón comunal</span>
+                <div className="hero-image-container">
+                    {config.fotoHero ? (
+                        <img src={config.fotoHero} alt="Portada Comunidad" className="hero-image-viva" />
+                    ) : (
+                        <div className="hero-image-placeholder">
+                            <span>Espacio para imagen de portada</span>
+                        </div>
+                    )}
                 </div>
+                
                 <div className="hero-content">
                     <span className="sub-title">IMPULSANDO NUESTRA COMUNIDAD</span>
                     <h1>Transformando Comunidades a través del Desarrollo Integral</h1>
@@ -69,7 +87,7 @@ const Home = () => {
                 </div>
             </header>
 
-            {/* 🚨 3. NUEVA SECCIÓN: TALLERES Y SERVICIOS (Basado en image_5.png) 🚨 */}
+            {/* Sección de Talleres y Servicios */}
             <section className="servicios-section">
                 <h2>Talleres y Servicios</h2>
                 <div className="grid-servicios">
@@ -78,26 +96,24 @@ const Home = () => {
                             <div className="icono-servicio">{taller.icono}</div>
                             <h3>{taller.titulo}</h3>
                             <p>{taller.descripcion}</p>
-                            {/* Este botón luego llevará al formulario de inscripción */}
                             <button className="btn-taller-mas">Ver detalles / Inscribirse</button>
                         </div>
                     ))}
                 </div>
             </section>
 
-            {/* 4. SECCIÓN NOTICIAS (Existente, pero estilizada) */}
+            {/* Sección de Noticias y Publicaciones */}
             <main className="noticias-section alternate-bg">
                 <h2>Últimas Noticias y Publicaciones</h2>
                 {cargando ? (
-                    <p className="mensaje-carga">Cargando publicaciones...</p>
+                    <p className="mensaje-carga">Cargando información del servidor...</p>
                 ) : publicaciones.length === 0 ? (
-                    <p className="mensaje-vacio">Aún no hay noticias publicadas. ¡Vuelve pronto!</p>
+                    <p className="mensaje-vacio">No hay publicaciones recientes. Vuelve pronto.</p>
                 ) : (
                     <div className="grid-noticias">
                         {publicaciones.map(publi => (
                             <article key={publi._id} className="tarjeta-noticia">
-                                
-                                {/* 🚨 NUEVO: Si la publicación tiene imagen, la mostramos 🚨 */}
+                                {/* Renderizado condicional de la imagen de la noticia */}
                                 {publi.imagen && (
                                     <img src={publi.imagen} alt={publi.titulo} className="imagen-noticia" />
                                 )}
@@ -116,7 +132,7 @@ const Home = () => {
                 )}
             </main>
 
-            {/* 5. SECCIÓN JUNTA (Existente, estilizada) */}
+            {/* Sección de Junta Directiva */}
             <section className="junta-section">
                 <h2>Conozca a su Junta Directiva</h2>
                 <div className="grid-junta">

@@ -337,6 +337,32 @@ h2 {
     }
 }
 
+/* --- ESTILOS DE PORTADA DINÁMICA (HERO) --- */
+.hero-section {
+    position: relative;
+    min-height: 80vh; /* O 600px, algo que le de altura */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.hero-image-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0; /* Cambia a 0 si -1 la oculta demasiado */
+}
+
+.hero-image-viva {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block; /* Asegura que se comporte como bloque */
+}
+
 /* Para tablets verticales y celulares grandes */
 @media (max-width: 768px) {
     .navbar {
