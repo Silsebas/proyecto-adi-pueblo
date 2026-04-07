@@ -4,9 +4,12 @@ const Publicacion = require('../models/Publicacion');
 exports.crearPublicacion = async (req, res) => {
     try {
         const publicacion = new Publicacion(req.body);
-        
-        // Asignamos como autor al usuario que hizo la petición (gracias al Token)
         publicacion.autor = req.usuario.id; 
+
+        // Si el usuario subió una imagen, Cloudinary nos devuelve la URL en req.file.path
+        if (req.file) {
+            publicacion.imagen = req.file.path;
+        }
 
         await publicacion.save();
         res.status(201).json({ msg: 'Publicación creada exitosamente', publicacion });

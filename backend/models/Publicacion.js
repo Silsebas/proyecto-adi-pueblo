@@ -10,14 +10,18 @@ const PublicacionSchema = mongoose.Schema({
         type: String,
         required: true
     },
-    // Guardamos quién hizo la publicación vinculándolo a la colección de Usuarios
+    // NUEVO: Aquí guardaremos el link seguro de Cloudinary 🚨
+    imagen: {
+        type: String,
+        required: false // Es opcional, por si la junta quiere subir un aviso solo de texto
+    },
     autor: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Usuario',
         required: true
     }
 }, {
-    timestamps: true // 🪄 MAGIA: Crea automáticamente 'createdAt' y 'updatedAt'
+    timestamps: true
 });
 
 module.exports = mongoose.model('Publicacion', PublicacionSchema);
