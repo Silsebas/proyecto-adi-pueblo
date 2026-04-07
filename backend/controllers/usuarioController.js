@@ -114,7 +114,7 @@ exports.login = async (req, res) => {
         jwt.sign(
             payload, 
             process.env.JWT_SECRET || 'palabraSecretaTemporal', 
-            { expiresIn: '8h' }, // El token durará 8 horas
+            { expiresIn: '15m' }, // El token durará 15 minutos
             (error, token) => {
                 if (error) throw error;
                 res.json({ token, msg: 'Login exitoso', role: usuario.role, nombre: usuario.nombre });

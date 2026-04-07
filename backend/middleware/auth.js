@@ -33,5 +33,13 @@ const esSecretario = (req, res, next) => {
     next();
 };
 
+// Aqui definimos la funcion que faltaba
+const esAdmin = (req, res, next) => {
+    if (req.usuario.role !== 'super_admin' && req.usuario.role !== 'admin') {
+        return res.status(403).json({ msg: 'Acceso denegado: Solo Administradores pueden realizar esta acción' });
+    }
+    next();
+};
+
 // Asegúrate de exportar el nuevo middleware
-module.exports = { verificarToken, esSuperAdmin, esSecretario };
+module.exports = { verificarToken, esSuperAdmin, esSecretario, esAdmin };

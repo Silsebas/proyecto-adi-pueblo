@@ -22,6 +22,8 @@ app.use(express.json());
 app.use('/api/usuarios', require('./routes/usuarios'));
 app.use('/api/publicaciones', require('./routes/publicaciones'));
 app.use('/api/actas', require('./routes/actas'));
+app.use('/api/configuracion', require('./routes/configuracion'));
+app.use('/api/miembros', require('./routes/miembros'));
 
 // Ruta base de prueba
 app.get('/', (req, res) => res.send('API de la Asociación funcionando 🚀'));
