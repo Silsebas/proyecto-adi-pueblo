@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -17,6 +17,31 @@ const Dashboard = () => {
     // --- ESTADOS PARA CONFIGURACIÓN (FOTO HERO) ---
     const [fotoHero, setFotoHero] = useState(null);
     const [mensajeConfig, setMensajeConfig] = useState('');
+
+    const [nombreMiembro, setNombreMiembro] = useState('');
+    const [puestoMiembro, setPuestoMiembro] = useState('');
+    const [ordenMiembro, setOrdenMiembro] = useState('');
+    const [fotoMiembro, setFotoMiembro] = useState(null);
+    const [mensajeMiembro, setMensajeMiembro] = useState('');
+    const [cargandoMiembro, setCargandoMiembro] = useState(false);
+
+    const [listaMiembros, setListaMiembros] = useState([]);
+
+    const cargarListaMiembros = async () => {
+        try {
+            const res = await fetch('http://localhost:4000/api/miembros');
+            const data = await res.json();
+            setListaMiembros(data);
+        } catch (error) {
+            console.error("Error al cargar miembros", error);
+        }
+    };
+
+    useEffect(() => {
+        if (vistaActual === 'usuarios') {
+            cargarListaMiembros();
+        }
+    }, [vistaActual]);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -105,6 +130,66 @@ const Dashboard = () => {
         }
     };
 
+    // --- FUNCIÓN PARA AGREGAR MIEMBRO DE LA JUNTA ---
+    const handleSubirMiembro = async (e) => {
+        e.preventDefault();
+        setCargandoMiembro(true);
+        setMensajeMiembro('Guardando miembro, por favor espera...');
+
+        const token = localStorage.getItem('token');
+        const formData = new FormData();
+        formData.append('nombre', nombreMiembro);
+        formData.append('puesto', puestoMiembro);
+        formData.append('orden', ordenMiembro);
+        if (fotoMiembro) formData.append('imagen', fotoMiembro);
+
+        try {
+            const respuesta = await fetch('http://localhost:4000/api/miembros', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+
+            if (respuesta.ok) {
+                setMensajeMiembro('✅ ¡Miembro de la junta agregado con éxito!');
+                setNombreMiembro('');
+                setPuestoMiembro('');
+                setOrdenMiembro('');
+                setFotoMiembro(null);
+                document.getElementById('input-foto-miembro').value = ''; 
+            } else {
+                const errorData = await respuesta.json();
+                setMensajeMiembro(`❌ Error: ${errorData.msg || 'No se pudo guardar'}`);
+            }
+        } catch (error) {
+            setMensajeMiembro('❌ Error de conexión con el servidor.');
+        } finally {
+            setCargandoMiembro(false);
+        }
+    };
+
+    // --- FUNCIÓN PARA ELIMINAR UN MIEMBRO (RENOVACIÓN DE JUNTA) ---
+    const handleEliminarMiembro = async (id) => {
+        if (!window.confirm("¿Estás seguro de eliminar a este directivo? Esto lo quitará de la página principal.")) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:4000/api/miembros/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (res.ok) {
+                // Volvemos a cargar la lista para que desaparezca al instante
+                cargarListaMiembros(); 
+                setMensajeMiembro('🗑️ Miembro eliminado correctamente.');
+                cargarListaMiembros();
+            }
+        } catch (error) {
+            setMensajeMiembro('❌ Error al intentar eliminar.');
+        }
+    };
+
     if (!usuario) return <p>Cargando panel...</p>;
 
     return (
@@ -113,6 +198,13 @@ const Dashboard = () => {
                 <div className="sidebar-header">
                     <h2>Panel ADI</h2>
                     <p className="user-badge">{usuario.role.toUpperCase()}</p>
+                </div>
+
+                {/* NUEVO: Botón para regresar a ver los cambios en la página pública */}
+                <div style={{ padding: '0 20px', marginBottom: '15px' }}>
+                    <Link to="/" style={{ color: '#fff', textDecoration: 'none', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        🏠 Ver Sitio Público
+                    </Link>
                 </div>
 
                 <nav className="sidebar-nav">
@@ -218,8 +310,100 @@ const Dashboard = () => {
 
                 {vistaActual === 'usuarios' && (
                     <div className="vista-contenido">
-                        <h2>Gestión de Miembros</h2>
-                        <p>Próximamente: Formulario para gestionar la Junta Directiva.</p>
+                        <h2>Gestión de la Junta Directiva</h2>
+                        <p>Agrega a los directivos para que aparezcan en la página principal.</p>
+                        
+                        <form onSubmit={handleSubirMiembro} className="formulario-panel">
+                            <div className="form-grupo">
+                                <label>Nombre Completo:</label>
+                                <input 
+                                    type="text" 
+                                    value={nombreMiembro} 
+                                    onChange={(e) => setNombreMiembro(e.target.value)} 
+                                    required 
+                                    placeholder="Ej: Juan Pérez"
+                                />
+                            </div>
+
+                            <div className="form-grupo">
+                                <label>Puesto / Cargo:</label>
+                                <input 
+                                    type="text" 
+                                    value={puestoMiembro} 
+                                    onChange={(e) => setPuestoMiembro(e.target.value)} 
+                                    required 
+                                    placeholder="Ej: Presidente"
+                                />
+                            </div>
+
+                            <div className="form-grupo">
+                                <label>Orden de aparición (Número):</label>
+                                <input 
+                                    type="number" 
+                                    value={ordenMiembro} 
+                                    onChange={(e) => setOrdenMiembro(e.target.value)} 
+                                    required 
+                                    placeholder="1 = Primero en salir"
+                                />
+                            </div>
+
+                            <div className="form-grupo">
+                                <label>Foto Formal:</label>
+                                <input 
+                                    type="file" 
+                                    id="input-foto-miembro"
+                                    accept="image/*" 
+                                    onChange={(e) => setFotoMiembro(e.target.files[0])} 
+                                    required
+                                />
+                            </div>
+
+                            <button type="submit" className="btn-submit-panel" disabled={cargandoMiembro}>
+                                {cargandoMiembro ? 'Guardando...' : 'Guardar Directivo'}
+                            </button>
+
+                            {mensajeMiembro && <p className="mensaje-respuesta">{mensajeMiembro}</p>}
+                        </form>
+
+                        {/* 🚨 NUEVA SECCIÓN: MANTENIMIENTO DE JUNTA 🚨 */}
+                        <hr style={{ margin: '40px 0', borderColor: '#ccc' }} />
+                        
+                        <h3>Directivos Actuales</h3>
+                        <p>Usa esta lista para eliminar miembros cuando la junta se renueve.</p>
+                        
+                        <div className="tabla-responsiva">
+                            <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse', marginTop: '15px' }}>
+                                <thead>
+                                    <tr style={{ backgroundColor: '#f8f9fa', borderBottom: '2px solid #dee2e6' }}>
+                                        <th style={{ padding: '10px' }}>Orden</th>
+                                        <th style={{ padding: '10px' }}>Nombre</th>
+                                        <th style={{ padding: '10px' }}>Puesto</th>
+                                        <th style={{ padding: '10px' }}>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {listaMiembros.length === 0 ? (
+                                        <tr><td colSpan="4" style={{ padding: '10px', textAlign: 'center' }}>No hay miembros registrados aún.</td></tr>
+                                    ) : (
+                                        listaMiembros.map((m) => (
+                                            <tr key={m._id} style={{ borderBottom: '1px solid #dee2e6' }}>
+                                                <td style={{ padding: '10px' }}>{m.orden}</td>
+                                                <td style={{ padding: '10px', fontWeight: 'bold' }}>{m.nombre}</td>
+                                                <td style={{ padding: '10px' }}>{m.puesto}</td>
+                                                <td style={{ padding: '10px' }}>
+                                                    <button 
+                                                        onClick={() => handleEliminarMiembro(m._id)}
+                                                        style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
+                                                    >
+                                                        Eliminar
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 )}
             </main>

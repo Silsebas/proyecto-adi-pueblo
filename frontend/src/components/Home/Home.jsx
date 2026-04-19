@@ -6,29 +6,42 @@ const Home = () => {
     // Estados principales
     const [publicaciones, setPublicaciones] = useState([]);
     const [config, setConfig] = useState({ fotoHero: '' });
+    const [miembros, setMiembros] = useState([]); 
     const [cargando, setCargando] = useState(true);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     // Carga de datos iniciales (Noticias y Configuración Visual)
     useEffect(() => {
+        // Revisamos si existe un token guardado en el navegador
+        const token = localStorage.getItem('token');
+        if (token) setIsLoggedIn(true);
+
         const obtenerDatos = async () => {
-            try {
-                // Obtener publicaciones
-                const resNoticias = await fetch('http://localhost:4000/api/publicaciones');
+        try {
+                // Ejecutamos todas las peticiones en paralelo para mayor velocidad
+                const [resNoticias, resConfig, resMiembros] = await Promise.all([
+                    fetch('http://localhost:4000/api/publicaciones'),
+                    fetch('http://localhost:4000/api/configuracion'),
+                    fetch('http://localhost:4000/api/miembros')
+                ]);
+
                 const dataNoticias = await resNoticias.json();
                 setPublicaciones(dataNoticias);
 
-                // Obtener configuración (Imagen de portada)
-                const resConfig = await fetch('http://localhost:4000/api/configuracion');
                 if (resConfig.ok) {
                     const dataConfig = await resConfig.json();
-                    if (dataConfig && dataConfig.fotoHero) {
-                        setConfig(dataConfig);
-                    }
+                    if (dataConfig.fotoHero) setConfig(dataConfig);
+                }
+
+                // NUEVO: Guardamos los miembros reales de la base de datos
+                if (resMiembros.ok) {
+                    const dataMiembros = await resMiembros.json();
+                    setMiembros(dataMiembros);
                 }
 
                 setCargando(false);
             } catch (error) {
-                console.error("Error en la carga de datos iniciales:", error);
+                console.error("Error cargando datos:", error);
                 setCargando(false);
             }
         };
@@ -59,9 +72,17 @@ const Home = () => {
                     <div className="logo-placeholder">ADI</div> 
                     <span className="brand-text">Desarrollo Integral</span>
                 </div>
-                <Link to="/login" className="btn-junta">
-                    Acceso Junta Directiva
-                </Link>
+                
+                {/* Botón dinámico según el estado de la sesión */}
+                {isLoggedIn ? (
+                    <Link to="/dashboard" className="btn-junta">
+                        ⚙️ Administrar Sitio
+                    </Link>
+                ) : (
+                    <Link to="/login" className="btn-junta">
+                        Acceso Junta Directiva
+                    </Link>
+                )}
             </nav>
 
             {/* Sección de Portada (Hero) */}
@@ -135,23 +156,24 @@ const Home = () => {
             {/* Sección de Junta Directiva */}
             <section className="junta-section">
                 <h2>Conozca a su Junta Directiva</h2>
-                <div className="grid-junta">
-                    <div className="tarjeta-miembro">
-                        <img src="https://ui-avatars.com/api/?name=J+P&background=28a745&color=fff&size=150" alt="Presidente" className="foto-miembro" />
-                        <h4>Juan Pérez</h4>
-                        <p>Presidente</p>
+                    <div className="grid-junta">
+                            {miembros.length === 0 ? (
+                                <p className="mensaje-vacio">La información de la junta se actualizará pronto.</p>
+                            ) : (
+                                miembros.map((m) => (
+                                    <div key={m._id} className="tarjeta-miembro">
+                                        <img 
+                                            src={m.foto} 
+                                            alt={m.nombre} 
+                                            className="foto-miembro" 
+                                            onError={(e) => { e.target.src = 'https://ui-avatars.com/api/?name=' + m.nombre + '&background=28a745&color=fff&size=150'; }}
+                                        />
+                                        <h4>{m.nombre}</h4>
+                                        <p>{m.puesto}</p>
+                                    </div>
+                                ))
+                            )}
                     </div>
-                    <div className="tarjeta-miembro">
-                        <img src="https://ui-avatars.com/api/?name=M+G&background=28a745&color=fff&size=150" alt="Secretaria" className="foto-miembro" />
-                        <h4>María González</h4>
-                        <p>Secretaria</p>
-                    </div>
-                    <div className="tarjeta-miembro">
-                        <img src="https://ui-avatars.com/api/?name=C+R&background=28a745&color=fff&size=150" alt="Tesorero" className="foto-miembro" />
-                        <h4>Carlos Rojas</h4>
-                        <p>Tesorero</p>
-                    </div>
-                </div>
             </section>
         </div>
     );

@@ -411,3 +411,12 @@ h2 {
         font-size: 1.5rem; /* Títulos más pequeños */
     }
 }
+
+.foto-miembro {
+    width: 150px;           /* Ancho fijo */
+    height: 150px;          /* Alto fijo igual al ancho para que sea un cuadrado perfecto */
+    border-radius: 50%;     /* Esto es lo que corta el cuadrado y lo hace un círculo */
+    object-fit: cover;      /* Evita que las caras se vean aplastadas o estiradas */
+    margin-bottom: 15px;    /* Da un pequeño espacio entre la foto y el nombre */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* (Opcional) Le da una sombrita profesional */
+}
