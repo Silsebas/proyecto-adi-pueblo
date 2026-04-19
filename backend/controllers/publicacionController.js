@@ -6,7 +6,7 @@ exports.crearPublicacion = async (req, res) => {
         const publicacion = new Publicacion(req.body);
         publicacion.autor = req.usuario.id; 
 
-        // Si el usuario subió una imagen, Cloudinary nos devuelve la URL en req.file.path
+        //  Si el usuario subió una imagen, Cloudinary nos devuelve la URL en req.file.path
         if (req.file) {
             publicacion.imagen = req.file.path;
         }

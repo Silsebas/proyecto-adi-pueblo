@@ -6,7 +6,7 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 console.log("🔑 TEST DE SECRETO:", process.env.JWT_SECRET);
 
-const express = require('express'); // <-- Esta era la línea que faltaba
+const express = require('express'); 
 const conectarDB = require('./config/db');
 const cors = require('cors');
 
