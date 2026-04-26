@@ -7,14 +7,15 @@ const Dashboard = () => {
     const [usuario, setUsuario] = useState(null);
     const [vistaActual, setVistaActual] = useState('inicio');
 
-    // --- ESTADOS PARA EL FORMULARIO DE NOTICIAS ---
+    // ==========================================
+    // ESTADOS: NOTICIAS, CONFIGURACIÓN Y MIEMBROS
+    // ==========================================
     const [titulo, setTitulo] = useState('');
     const [contenido, setContenido] = useState('');
     const [imagen, setImagen] = useState(null);
     const [mensajePub, setMensajePub] = useState('');
     const [cargandoPub, setCargandoPub] = useState(false);
     
-    // --- ESTADOS PARA CONFIGURACIÓN (FOTO HERO) ---
     const [fotoHero, setFotoHero] = useState(null);
     const [mensajeConfig, setMensajeConfig] = useState('');
 
@@ -24,119 +25,125 @@ const Dashboard = () => {
     const [fotoMiembro, setFotoMiembro] = useState(null);
     const [mensajeMiembro, setMensajeMiembro] = useState('');
     const [cargandoMiembro, setCargandoMiembro] = useState(false);
-
     const [listaMiembros, setListaMiembros] = useState([]);
 
-    const cargarListaMiembros = async () => {
-        try {
-            const res = await fetch('http://localhost:4000/api/miembros');
-            const data = await res.json();
-            setListaMiembros(data);
-        } catch (error) {
-            console.error("Error al cargar miembros", error);
-        }
+    // ==========================================
+    // ESTADOS: MÓDULO DE ACTAS
+    // ==========================================
+    const [tituloActa, setTituloActa] = useState('');
+    const [archivoActa, setArchivoActa] = useState(null);
+    const [mensajeActa, setMensajeActa] = useState('');
+    const [cargandoActa, setCargandoActa] = useState(false);
+    const [listaActas, setListaActas] = useState([]);
+
+    // ==========================================
+    // LÓGICA GLOBAL DE SEGURIDAD (Cierre automático)
+    // ==========================================
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        navigate('/'); // Redirige al inicio público
     };
 
-    useEffect(() => {
-        if (vistaActual === 'usuarios') {
-            cargarListaMiembros();
+    // 🚨 NUEVO: Guarda de seguridad global para la sesión expirada
+    const verificarExpiracion = (res) => {
+        if (res.status === 401 || res.status === 403) {
+            alert("⏳ Por seguridad, tu sesión ha expirado tras 15 minutos de inactividad.\n\nSerás redirigido a la pantalla principal.");
+            handleLogout();
+            return true; // Indica que la sesión murió
         }
-    }, [vistaActual]);
+        return false; // Todo en orden, puede continuar
+    };
 
+
+    // ==========================================
+    // SEGURIDAD INICIAL Y SINCRONIZACIÓN DE DATOS
+    // ==========================================
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (!token) {
             navigate('/login');
             return;
         }
-
         try {
             const payloadDecodificado = JSON.parse(atob(token.split('.')[1]));
             setUsuario(payloadDecodificado.usuario);
         } catch (error) {
-            console.error("Error al leer el token");
-            localStorage.removeItem('token');
-            navigate('/login');
+            handleLogout();
         }
     }, [navigate]);
 
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        navigate('/'); 
+    const cargarListaActas = async () => {
+        try {
+            const res = await fetch('http://localhost:4000/api/actas');
+            setListaActas(await res.json());
+        } catch (error) { console.error("Error al cargar actas", error); }
     };
 
-    // --- FUNCIÓN PARA SUBIR LA NOTICIA ---
+    const cargarListaMiembros = async () => {
+        try {
+            const res = await fetch('http://localhost:4000/api/miembros');
+            setListaMiembros(await res.json());
+        } catch (error) { console.error("Error al cargar miembros", error); }
+    };
+
+    useEffect(() => {
+        if (vistaActual === 'actas') cargarListaActas();
+        if (vistaActual === 'usuarios') cargarListaMiembros();
+    }, [vistaActual]);
+
+
+    // ==========================================
+    // CONTROLADORES DE EVENTOS (HANDLERS)
+    // ==========================================
+    
     const handleSubirNoticia = async (e) => {
         e.preventDefault();
         setCargandoPub(true);
-        setMensajePub('Subiendo publicación, por favor espera...');
-
-        const token = localStorage.getItem('token');
-        
+        setMensajePub('Subiendo publicación...');
         const formData = new FormData();
         formData.append('titulo', titulo);
         formData.append('contenido', contenido);
-        if (imagen) {
-            formData.append('imagen', imagen);
-        }
+        if (imagen) formData.append('imagen', imagen);
 
         try {
-            const respuesta = await fetch('http://localhost:4000/api/publicaciones', {
+            const res = await fetch('http://localhost:4000/api/publicaciones', {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}` 
-                },
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                 body: formData
             });
+            
+            if (verificarExpiracion(res)) return; // Corta aquí si expiró
 
-            if (respuesta.ok) {
-                setMensajePub('✅ ¡Noticia publicada con éxito en el Muro!');
-                setTitulo('');
-                setContenido('');
-                setImagen(null);
+            if (res.ok) {
+                setMensajePub('✅ Noticia publicada con éxito');
+                setTitulo(''); setContenido(''); setImagen(null);
                 document.getElementById('input-imagen').value = ''; 
-            } else {
-                const errorData = await respuesta.json();
-                setMensajePub(`❌ Error: ${errorData.msg || 'No se pudo publicar'}`);
-            }
-        } catch (error) {
-            console.error(error);
-            setMensajePub('❌ Error de conexión con el servidor.');
-        } finally {
-            setCargandoPub(false);
-        }
+            } else { setMensajePub('❌ Error al publicar'); }
+        } catch (error) { setMensajePub('❌ Error de conexión.'); } 
+        finally { setCargandoPub(false); }
     };
 
-    // --- FUNCIÓN PARA ACTUALIZAR FOTO PRINCIPAL ---
     const handleActualizarHero = async (e) => {
         e.preventDefault();
-        const token = localStorage.getItem('token');
         const formData = new FormData();
         formData.append('imagen', fotoHero);
-
         try {
-            const respuesta = await fetch('http://localhost:4000/api/configuracion/hero', {
+            const res = await fetch('http://localhost:4000/api/configuracion/hero', {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                 body: formData
             });
-            if (respuesta.ok) {
-                setMensajeConfig('✅ Foto de inicio actualizada. ¡Revisa la página principal!');
-            } else {
-                setMensajeConfig('❌ Error al subir la imagen. Verifica tus permisos.');
-            }
-        } catch (error) {
-            setMensajeConfig('❌ Error de conexión con el servidor.');
-        }
+            
+            if (verificarExpiracion(res)) return; // Corta aquí si expiró
+
+            if (res.ok) setMensajeConfig('✅ Foto de inicio actualizada.');
+            else setMensajeConfig('❌ Error al actualizar.');
+        } catch (error) { setMensajeConfig('❌ Error de conexión.'); }
     };
 
-    // --- FUNCIÓN PARA AGREGAR MIEMBRO DE LA JUNTA ---
     const handleSubirMiembro = async (e) => {
         e.preventDefault();
         setCargandoMiembro(true);
-        setMensajeMiembro('Guardando miembro, por favor espera...');
-
-        const token = localStorage.getItem('token');
         const formData = new FormData();
         formData.append('nombre', nombreMiembro);
         formData.append('puesto', puestoMiembro);
@@ -144,83 +151,112 @@ const Dashboard = () => {
         if (fotoMiembro) formData.append('imagen', fotoMiembro);
 
         try {
-            const respuesta = await fetch('http://localhost:4000/api/miembros', {
+            const res = await fetch('http://localhost:4000/api/miembros', {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                 body: formData
             });
-
-            if (respuesta.ok) {
-                setMensajeMiembro('✅ ¡Miembro de la junta agregado con éxito!');
-                setNombreMiembro('');
-                setPuestoMiembro('');
-                setOrdenMiembro('');
-                setFotoMiembro(null);
-                document.getElementById('input-foto-miembro').value = ''; 
-            } else {
-                const errorData = await respuesta.json();
-                setMensajeMiembro(`❌ Error: ${errorData.msg || 'No se pudo guardar'}`);
-            }
-        } catch (error) {
-            setMensajeMiembro('❌ Error de conexión con el servidor.');
-        } finally {
-            setCargandoMiembro(false);
-        }
-    };
-
-    // --- FUNCIÓN PARA ELIMINAR UN MIEMBRO (RENOVACIÓN DE JUNTA) ---
-    const handleEliminarMiembro = async (id) => {
-        if (!window.confirm("¿Estás seguro de eliminar a este directivo? Esto lo quitará de la página principal.")) return;
-
-        try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:4000/api/miembros/${id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            
+            if (verificarExpiracion(res)) return; // Corta aquí si expiró
 
             if (res.ok) {
-                // Volvemos a cargar la lista para que desaparezca al instante
-                cargarListaMiembros(); 
-                setMensajeMiembro('🗑️ Miembro eliminado correctamente.');
+                setMensajeMiembro('✅ Miembro agregado');
+                setNombreMiembro(''); setPuestoMiembro(''); setOrdenMiembro(''); setFotoMiembro(null);
+                document.getElementById('input-foto-miembro').value = ''; 
                 cargarListaMiembros();
+            } else { setMensajeMiembro('❌ Error al guardar'); }
+        } catch (error) { setMensajeMiembro('❌ Error de conexión'); } 
+        finally { setCargandoMiembro(false); }
+    };
+
+    const handleEliminarMiembro = async (id) => {
+        if (!window.confirm("¿Seguro de eliminar a este directivo?")) return;
+        try {
+            const res = await fetch(`http://localhost:4000/api/miembros/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            
+            if (verificarExpiracion(res)) return; // Corta aquí si expiró
+
+            if (res.ok) {
+                cargarListaMiembros(); 
+                setMensajeMiembro('🗑️ Miembro eliminado.');
             }
-        } catch (error) {
-            setMensajeMiembro('❌ Error al intentar eliminar.');
-        }
+        } catch (error) { setMensajeMiembro('❌ Error al eliminar.'); }
+    };
+
+    const handleSubirActa = async (e) => {
+        e.preventDefault();
+        setCargandoActa(true);
+        const formData = new FormData();
+        formData.append('titulo', tituloActa);
+        if (archivoActa) formData.append('archivo', archivoActa);
+
+        try {
+            const res = await fetch('http://localhost:4000/api/actas', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                body: formData
+            });
+            
+            if (verificarExpiracion(res)) return; // Corta aquí si expiró
+
+            if (res.ok) {
+                setMensajeActa('✅ Acta publicada legalmente.');
+                setTituloActa(''); setArchivoActa(null);
+                document.getElementById('input-archivo-acta').value = ''; 
+                cargarListaActas();
+            } else { setMensajeActa('❌ Error al guardar acta'); }
+        } catch (error) { setMensajeActa('❌ Error de conexión.'); } 
+        finally { setCargandoActa(false); }
+    };
+
+    const handleEliminarActa = async (id) => {
+        if (!window.confirm("¿Confirmas la eliminación de este documento legal?")) return;
+        try {
+            const res = await fetch(`http://localhost:4000/api/actas/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            
+            if (verificarExpiracion(res)) return; // Corta aquí si expiró
+
+            if (res.ok) {
+                cargarListaActas();
+                setMensajeActa('🗑️ Acta eliminada.');
+            }
+        } catch (error) { setMensajeActa('❌ Error al eliminar.'); }
     };
 
     if (!usuario) return <p>Cargando panel...</p>;
 
     return (
         <div className="dashboard-container">
+            {/* --- BARRA LATERAL (SIDEBAR) --- */}
             <aside className="dashboard-sidebar">
                 <div className="sidebar-header">
                     <h2>Panel ADI</h2>
                     <p className="user-badge">{usuario.role.toUpperCase()}</p>
                 </div>
 
-                {/* NUEVO: Botón para regresar a ver los cambios en la página pública */}
-                <div style={{ padding: '0 20px', marginBottom: '15px' }}>
-                    <Link to="/" style={{ color: '#fff', textDecoration: 'none', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        🏠 Ver Sitio Público
-                    </Link>
-                </div>
-
                 <nav className="sidebar-nav">
+                    <Link to="/" className="nav-btn" style={{ borderBottom: '1px solid #4b545c', marginBottom: '10px', color: '#4fc3f7' }}>
+                        🌐 Ver Sitio Público
+                    </Link>
+
                     <button className={vistaActual === 'inicio' ? 'nav-btn activo' : 'nav-btn'} onClick={() => setVistaActual('inicio')}>🏠 Inicio</button>
                     <button className={vistaActual === 'publicaciones' ? 'nav-btn activo' : 'nav-btn'} onClick={() => setVistaActual('publicaciones')}>📰 Mis Publicaciones</button>
                     
-                    {(usuario.role === 'secretario' || usuario.role === 'super_admin') && (
-                        <button className={vistaActual === 'actas' ? 'nav-btn activo' : 'nav-btn'} onClick={() => setVistaActual('actas')}>📁 Gestión de Actas</button>
-                    )}
-
-                    {/* CORRECCIÓN: Botones de Admin sin duplicados */}
                     {(usuario.role === 'super_admin' || usuario.role === 'admin') && (
                         <>
                             <button className={vistaActual === 'usuarios' ? 'nav-btn activo' : 'nav-btn'} onClick={() => setVistaActual('usuarios')}>👥 Miembros de Junta</button>
                             <button className={vistaActual === 'configuracion' ? 'nav-btn activo' : 'nav-btn'} onClick={() => setVistaActual('configuracion')}>⚙️ Ajustes del Sitio</button>
                         </>
+                    )}
+
+                    {(usuario?.role === 'super_admin' || usuario?.role === 'secretario') && (
+                        <button className={vistaActual === 'actas' ? 'nav-btn activo' : 'nav-btn'} onClick={() => setVistaActual('actas')}>📝 Gestión de Actas</button>
                     )}
                 </nav>
 
@@ -230,10 +266,12 @@ const Dashboard = () => {
                 </div>
             </aside>
 
+            {/* --- CONTENIDO PRINCIPAL --- */}
             <main className="dashboard-main">
+                
                 {vistaActual === 'inicio' && (
                     <div className="vista-inicio">
-                        <h1>Bienvenido al Panel de Administración</h1>
+                        <h1>Panel de Administración</h1>
                         <p>Desde aquí podrás gestionar la información pública de la Asociación de Desarrollo.</p>
                         <p>Selecciona una opción en el menú lateral para comenzar.</p>
                     </div>
@@ -243,44 +281,20 @@ const Dashboard = () => {
                     <div className="vista-contenido">
                         <h2>Redactar Nueva Noticia</h2>
                         <form onSubmit={handleSubirNoticia} className="formulario-panel">
-                            
                             <div className="form-grupo">
                                 <label>Título del Aviso o Noticia:</label>
-                                <input 
-                                    type="text" 
-                                    value={titulo} 
-                                    onChange={(e) => setTitulo(e.target.value)} 
-                                    required 
-                                    placeholder="Ej: Gran Feria del Agricultor este Domingo"
-                                />
+                                <input type="text" value={titulo} onChange={(e) => setTitulo(e.target.value)} required placeholder="Ej: Gran Feria del Agricultor" />
                             </div>
-
                             <div className="form-grupo">
                                 <label>Contenido Completo:</label>
-                                <textarea 
-                                    value={contenido} 
-                                    onChange={(e) => setContenido(e.target.value)} 
-                                    required 
-                                    rows="5"
-                                    placeholder="Escribe aquí todos los detalles..."
-                                ></textarea>
+                                <textarea value={contenido} onChange={(e) => setContenido(e.target.value)} required rows="5" placeholder="Detalles del aviso..."></textarea>
                             </div>
-
                             <div className="form-grupo">
                                 <label>Imagen (Opcional):</label>
-                                <input 
-                                    type="file" 
-                                    id="input-imagen"
-                                    accept="image/*" 
-                                    onChange={(e) => setImagen(e.target.files[0])} 
-                                />
-                                <small>Formatos permitidos: JPG, PNG. La imagen se optimizará automáticamente.</small>
+                                <input type="file" id="input-imagen" accept="image/*" onChange={(e) => setImagen(e.target.files[0])} />
+                                <small>Formatos permitidos: JPG, PNG.</small>
                             </div>
-
-                            <button type="submit" className="btn-submit-panel" disabled={cargandoPub}>
-                                {cargandoPub ? 'Publicando...' : 'Publicar Noticia'}
-                            </button>
-
+                            <button type="submit" className="btn-submit-panel" disabled={cargandoPub}>{cargandoPub ? 'Publicando...' : 'Publicar Noticia'}</button>
                             {mensajePub && <p className="mensaje-respuesta">{mensajePub}</p>}
                         </form>
                     </div>
@@ -292,7 +306,7 @@ const Dashboard = () => {
                         <p>Cambia la imagen principal que ven los vecinos al entrar al sitio.</p>
                         <form onSubmit={handleActualizarHero} className="formulario-panel">
                             <div className="form-grupo">
-                                <label>Foto de Portada (Pueblo / Salón):</label>
+                                <label>Foto de Portada (Hero):</label>
                                 <input type="file" onChange={(e) => setFotoHero(e.target.files[0])} required />
                             </div>
                             <button type="submit" className="btn-submit-panel">Actualizar Portada</button>
@@ -303,100 +317,107 @@ const Dashboard = () => {
 
                 {vistaActual === 'actas' && (
                     <div className="vista-contenido">
-                        <h2>Libro de Actas Digital</h2>
-                        <p>Área exclusiva para la subida y modificación de Actas.</p>
+                        <h2>📝 Registro Legal de Actas</h2>
+                        <form onSubmit={handleSubirActa} className="formulario-panel">
+                            <div className="form-grupo">
+                                <label>Identificador del Acta:</label>
+                                <input type="text" value={tituloActa} onChange={(e) => setTituloActa(e.target.value)} required placeholder="Ej: Acta Ordinaria #45 - Marzo" />
+                            </div>
+                            <div className="form-grupo">
+                                <label>Documento Escaneado (PDF/Imagen):</label>
+                                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                    <input type="file" id="input-archivo-acta" accept=".pdf, image/*" onChange={(e) => setArchivoActa(e.target.files[0])} required={!archivoActa} />
+                                    {archivoActa && (
+                                        <button type="button" className="btn-accion btn-amarillo" onClick={() => {setArchivoActa(null); document.getElementById('input-archivo-acta').value = '';}}>
+                                            ❌ Quitar Archivo
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                            <button type="submit" className="btn-submit-panel" disabled={cargandoActa}>{cargandoActa ? 'Procesando...' : 'Publicar Acta'}</button>
+                            {mensajeActa && <p className="mensaje-respuesta">{mensajeActa}</p>}
+                        </form>
+
+                        <hr style={{ margin: '40px 0', borderColor: '#eee' }} />
+                        
+                        <h3>Log de Auditoría</h3>
+                        <div className="tabla-responsiva">
+                            <table className="tabla-panel">
+                                <thead>
+                                    <tr>
+                                        <th>Documento Registrado</th>
+                                        <th>Fecha y Hora (Sistema)</th>
+                                        <th>Control</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {listaActas.map((a) => (
+                                        <tr key={a._id}>
+                                            <td style={{ fontWeight: 'bold' }}>{a.titulo}</td>
+                                            <td>{new Date(a.createdAt).toLocaleString()}</td>
+                                            <td>
+                                                <a href={a.archivoUrl} target="_blank" rel="noopener noreferrer" className="btn-accion btn-verde">Ver PDF</a>
+                                                <button onClick={() => handleEliminarActa(a._id)} className="btn-accion btn-rojo">Eliminar</button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {listaActas.length === 0 && (
+                                        <tr><td colSpan="3" style={{ textAlign: 'center' }}>No hay actas en el sistema.</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 )}
 
                 {vistaActual === 'usuarios' && (
                     <div className="vista-contenido">
-                        <h2>Gestión de la Junta Directiva</h2>
-                        <p>Agrega a los directivos para que aparezcan en la página principal.</p>
-                        
+                        <h2>Gestión de Junta Directiva</h2>
                         <form onSubmit={handleSubirMiembro} className="formulario-panel">
                             <div className="form-grupo">
                                 <label>Nombre Completo:</label>
-                                <input 
-                                    type="text" 
-                                    value={nombreMiembro} 
-                                    onChange={(e) => setNombreMiembro(e.target.value)} 
-                                    required 
-                                    placeholder="Ej: Juan Pérez"
-                                />
+                                <input type="text" value={nombreMiembro} onChange={(e) => setNombreMiembro(e.target.value)} required placeholder="Ej: Juan Pérez" />
                             </div>
-
                             <div className="form-grupo">
-                                <label>Puesto / Cargo:</label>
-                                <input 
-                                    type="text" 
-                                    value={puestoMiembro} 
-                                    onChange={(e) => setPuestoMiembro(e.target.value)} 
-                                    required 
-                                    placeholder="Ej: Presidente"
-                                />
+                                <label>Puesto o Cargo:</label>
+                                <input type="text" value={puestoMiembro} onChange={(e) => setPuestoMiembro(e.target.value)} required placeholder="Ej: Presidente" />
                             </div>
-
                             <div className="form-grupo">
-                                <label>Orden de aparición (Número):</label>
-                                <input 
-                                    type="number" 
-                                    value={ordenMiembro} 
-                                    onChange={(e) => setOrdenMiembro(e.target.value)} 
-                                    required 
-                                    placeholder="1 = Primero en salir"
-                                />
+                                <label>Orden de aparición:</label>
+                                <input type="number" value={ordenMiembro} onChange={(e) => setOrdenMiembro(e.target.value)} required placeholder="1 = Primero" />
                             </div>
-
                             <div className="form-grupo">
-                                <label>Foto Formal:</label>
-                                <input 
-                                    type="file" 
-                                    id="input-foto-miembro"
-                                    accept="image/*" 
-                                    onChange={(e) => setFotoMiembro(e.target.files[0])} 
-                                    required
-                                />
+                                <label>Fotografía Formal:</label>
+                                <input type="file" id="input-foto-miembro" accept="image/*" onChange={(e) => setFotoMiembro(e.target.files[0])} required />
                             </div>
-
-                            <button type="submit" className="btn-submit-panel" disabled={cargandoMiembro}>
-                                {cargandoMiembro ? 'Guardando...' : 'Guardar Directivo'}
-                            </button>
-
+                            <button type="submit" className="btn-submit-panel" disabled={cargandoMiembro}>{cargandoMiembro ? 'Guardando...' : 'Añadir Directivo'}</button>
                             {mensajeMiembro && <p className="mensaje-respuesta">{mensajeMiembro}</p>}
                         </form>
 
-                        {/* 🚨 NUEVA SECCIÓN: MANTENIMIENTO DE JUNTA 🚨 */}
-                        <hr style={{ margin: '40px 0', borderColor: '#ccc' }} />
+                        <hr style={{ margin: '40px 0', borderColor: '#eee' }} />
                         
-                        <h3>Directivos Actuales</h3>
-                        <p>Usa esta lista para eliminar miembros cuando la junta se renueve.</p>
-                        
+                        <h3>Mantenimiento de Directivos</h3>
                         <div className="tabla-responsiva">
-                            <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse', marginTop: '15px' }}>
+                            <table className="tabla-panel">
                                 <thead>
-                                    <tr style={{ backgroundColor: '#f8f9fa', borderBottom: '2px solid #dee2e6' }}>
-                                        <th style={{ padding: '10px' }}>Orden</th>
-                                        <th style={{ padding: '10px' }}>Nombre</th>
-                                        <th style={{ padding: '10px' }}>Puesto</th>
-                                        <th style={{ padding: '10px' }}>Acción</th>
+                                    <tr>
+                                        <th>Orden</th>
+                                        <th>Nombre</th>
+                                        <th>Puesto</th>
+                                        <th>Acción</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {listaMiembros.length === 0 ? (
-                                        <tr><td colSpan="4" style={{ padding: '10px', textAlign: 'center' }}>No hay miembros registrados aún.</td></tr>
+                                        <tr><td colSpan="4" style={{ textAlign: 'center' }}>No hay miembros registrados.</td></tr>
                                     ) : (
                                         listaMiembros.map((m) => (
-                                            <tr key={m._id} style={{ borderBottom: '1px solid #dee2e6' }}>
-                                                <td style={{ padding: '10px' }}>{m.orden}</td>
-                                                <td style={{ padding: '10px', fontWeight: 'bold' }}>{m.nombre}</td>
-                                                <td style={{ padding: '10px' }}>{m.puesto}</td>
-                                                <td style={{ padding: '10px' }}>
-                                                    <button 
-                                                        onClick={() => handleEliminarMiembro(m._id)}
-                                                        style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
-                                                    >
-                                                        Eliminar
-                                                    </button>
+                                            <tr key={m._id}>
+                                                <td>{m.orden}</td>
+                                                <td style={{ fontWeight: 'bold' }}>{m.nombre}</td>
+                                                <td>{m.puesto}</td>
+                                                <td>
+                                                    <button onClick={() => handleEliminarMiembro(m._id)} className="btn-accion btn-rojo">Eliminar</button>
                                                 </td>
                                             </tr>
                                         ))
