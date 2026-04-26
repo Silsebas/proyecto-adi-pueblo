@@ -10,13 +10,38 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// 2. Configuramos dónde y cómo se van a guardar
+// 2. Configuramos dónde y cómo se van a guardar de forma inteligente
 const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
-    params: {
-        folder: 'adi_publicaciones', // Se creará esta carpeta en tu Cloudinary
-        allowed_formats: ['jpg', 'png', 'jpeg', 'webp'], // Formatos permitidos
-        transformation: [{ width: 1000, crop: 'limit' }] // Achica la imagen si es demasiado gigante para no gastar espacio
+    params: async (req, file) => {
+        
+        // Si el archivo que viene es un PDF:
+        if (file.mimetype === 'application/pdf') {
+            
+            // 🚨 TU IDEA: Atrapamos el título del formulario
+            let nombreLimpio = 'Documento_Legal'; // Nombre por defecto por si acaso
+            
+            if (req.body.titulo) {
+                nombreLimpio = req.body.titulo
+                    .trim() // Quita espacios al inicio y al final
+                    .replace(/\s+/g, '_') // Cambia espacios en blanco por guiones bajos
+                    .replace(/[^a-zA-Z0-9_]/g, ''); // Borra tildes, comas o caracteres raros que dañan el link
+            }
+
+            return {
+                folder: 'adi_publicaciones',
+                resource_type: 'raw', // Usamos 'raw' para evitar el maldito Error 401
+                public_id: `${nombreLimpio}.pdf` // Le forzamos el nombre del formulario + la extensión
+            };
+        }
+        
+        // Si no es un PDF (es una foto normal):
+        return {
+            folder: 'adi_publicaciones',
+            allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+            transformation: [{ width: 1000, crop: 'limit' }],
+            resource_type: 'image'
+        };
     }
 });
 
