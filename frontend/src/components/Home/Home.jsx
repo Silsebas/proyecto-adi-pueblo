@@ -46,11 +46,11 @@ const Home = () => {
             try {
                 // 🚨 Se añade la petición de los Talleres al Promise.all
                 const [resNoticias, resAcuerdos, resConfig, resMiembros, resTalleres] = await Promise.all([
-                    fetch('http://localhost:4000/api/publicaciones'),
-                    fetch('http://localhost:4000/api/acuerdos'),
-                    fetch('http://localhost:4000/api/configuracion'),
-                    fetch('http://localhost:4000/api/miembros'),
-                    fetch('http://localhost:4000/api/talleres')
+                    fetch('https://adi-santa-rita.onrender.com/api/publicaciones'),
+                    fetch('https://adi-santa-rita.onrender.com/api/acuerdos'),
+                    fetch('https://adi-santa-rita.onrender.com/api/configuracion'),
+                    fetch('https://adi-santa-rita.onrender.com/api/miembros'),
+                    fetch('https://adi-santa-rita.onrender.com/api/talleres')
                 ]);
 
                 const dataNoticias = await resNoticias.json();
@@ -97,7 +97,7 @@ const Home = () => {
         setCargandoInscripcion(true);
         setMensajeInscripcion('');
         try {
-            const res = await fetch('http://localhost:4000/api/talleres/inscribir', {
+            const res = await fetch('https://adi-santa-rita.onrender.com/api/talleres/inscribir', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -189,7 +189,7 @@ const Home = () => {
         setCargandoCenso(true);
         setMensajeCenso('');
         try {
-            const res = await fetch('http://localhost:4000/api/habitantes', {
+            const res = await fetch('https://adi-santa-rita.onrender.com/api/habitantes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(datosCenso)

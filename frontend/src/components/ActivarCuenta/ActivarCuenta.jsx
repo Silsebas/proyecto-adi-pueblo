@@ -16,7 +16,7 @@ const ActivarCuenta = () => {
         setError(''); setMensaje('');
 
         try {
-            const respuesta = await fetch(`http://localhost:4000/api/usuarios/activar/${token}`, {
+            const respuesta = await fetch(`https://adi-santa-rita.onrender.com/api/usuarios/activar/${token}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ password })

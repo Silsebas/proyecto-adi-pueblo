@@ -26,7 +26,7 @@ const Login = () => {
         setCargando(true);
 
         try {
-            const respuesta = await fetch('http://localhost:4000/api/usuarios/login', {
+            const respuesta = await fetch('https://adi-santa-rita.onrender.com/api/usuarios/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
@@ -62,7 +62,7 @@ const Login = () => {
         setCargando(true);
 
         try {
-            const respuesta = await fetch('http://localhost:4000/api/usuarios/olvide-password', {
+            const respuesta = await fetch('https://adi-santa-rita.onrender.com/api/usuarios/olvide-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email })
@@ -88,7 +88,7 @@ const Login = () => {
         setCargando(true);
 
         try {
-            const respuesta = await fetch('http://localhost:4000/api/usuarios/cambiar-password-obligatorio', {
+            const respuesta = await fetch('https://adi-santa-rita.onrender.com/api/usuarios/cambiar-password-obligatorio', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: userIdTemp, nuevaPassword })

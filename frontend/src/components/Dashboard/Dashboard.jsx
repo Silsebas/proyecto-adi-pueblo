@@ -166,21 +166,21 @@ const Dashboard = () => {
 
     const cargarListaActas = async () => {
         try {
-            const res = await fetch('http://localhost:4000/api/actas');
+            const res = await fetch('https://adi-santa-rita.onrender.com/api/actas');
             setListaActas(await res.json());
         } catch (error) { console.error("Error al cargar actas", error); }
     };
 
     const cargarListaAcuerdos = async () => {
         try {
-            const res = await fetch('http://localhost:4000/api/acuerdos');
+            const res = await fetch('https://adi-santa-rita.onrender.com/api/acuerdos');
             setListaAcuerdos(await res.json());
         } catch (error) { console.error("Error al cargar acuerdos", error); }
     };
 
     const cargarListaMiembros = async () => {
         try {
-            const res = await fetch('http://localhost:4000/api/miembros');
+            const res = await fetch('https://adi-santa-rita.onrender.com/api/miembros');
             setListaMiembros(await res.json());
         } catch (error) { console.error("Error al cargar miembros", error); }
     };
@@ -188,11 +188,11 @@ const Dashboard = () => {
     const cargarTalleresEInscripciones = async () => {
         try {
             // 1. Traer los talleres públicos
-            const resT = await fetch('http://localhost:4000/api/talleres');
+            const resT = await fetch('https://adi-santa-rita.onrender.com/api/talleres');
             setListaTalleres(await resT.json());
 
             // 2. Traer las inscripciones privadas (Requiere token)
-            const resI = await fetch('http://localhost:4000/api/talleres/inscripciones/listado', {
+            const resI = await fetch('https://adi-santa-rita.onrender.com/api/talleres/inscripciones/listado', {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
             if (resI.ok) {
@@ -205,7 +205,7 @@ const Dashboard = () => {
     // 🚨 NUEVO: Sincronizar el Padrón Comunal
  const cargarPadronComunal = async () => {
         try {
-            const res = await fetch('http://localhost:4000/api/habitantes', {
+            const res = await fetch('https://adi-santa-rita.onrender.com/api/habitantes', {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
             if (res.ok) {
@@ -217,7 +217,7 @@ const Dashboard = () => {
     // 🚨 NUEVO: Cargar Cuentas del Sistema
     const cargarCuentasSistema = async () => {
         try {
-            const res = await fetch('http://localhost:4000/api/usuarios/usuarios', {
+            const res = await fetch('https://adi-santa-rita.onrender.com/api/usuarios/usuarios', {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
             if (res.ok) {
@@ -248,7 +248,7 @@ const Dashboard = () => {
         if (imagen) formData.append('imagen', imagen);
 
         try {
-            const res = await fetch('http://localhost:4000/api/publicaciones', {
+            const res = await fetch('https://adi-santa-rita.onrender.com/api/publicaciones', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                 body: formData
@@ -272,7 +272,7 @@ const Dashboard = () => {
         const formData = new FormData();
         formData.append('imagen', fotoHero);
         try {
-            const res = await fetch('http://localhost:4000/api/configuracion/hero', {
+            const res = await fetch('https://adi-santa-rita.onrender.com/api/configuracion/hero', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                 body: formData
@@ -293,7 +293,7 @@ const Dashboard = () => {
         if (fotoMiembro) formData.append('imagen', fotoMiembro);
 
         try {
-            const res = await fetch('http://localhost:4000/api/miembros', {
+            const res = await fetch('https://adi-santa-rita.onrender.com/api/miembros', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                 body: formData
@@ -312,7 +312,7 @@ const Dashboard = () => {
     const handleEliminarMiembro = async (id) => {
         if (!window.confirm("¿Seguro de eliminar a este directivo?")) return;
         try {
-            const res = await fetch(`http://localhost:4000/api/miembros/${id}`, {
+            const res = await fetch(`https://adi-santa-rita.onrender.com/api/miembros/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
@@ -333,7 +333,7 @@ const Dashboard = () => {
         if (archivoActa) formData.append('archivo', archivoActa);
 
         try {
-            const res = await fetch('http://localhost:4000/api/actas', {
+            const res = await fetch('https://adi-santa-rita.onrender.com/api/actas', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                 body: formData
@@ -357,7 +357,7 @@ const Dashboard = () => {
         formData.append('archivo', archivoActa);
 
         try {
-            const res = await fetch(`http://localhost:4000/api/actas/${actaEnEdicion._id}`, {
+            const res = await fetch(`https://adi-santa-rita.onrender.com/api/actas/${actaEnEdicion._id}`, {
                 method: 'PUT',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                 body: formData
@@ -376,7 +376,7 @@ const Dashboard = () => {
     const handleEliminarActa = async (id) => {
         if (!window.confirm("¿Confirmas que deseas enviar esta acta al registro de eliminados?")) return;
         try {
-            const res = await fetch(`http://localhost:4000/api/actas/${id}`, {
+            const res = await fetch(`https://adi-santa-rita.onrender.com/api/actas/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
@@ -389,7 +389,7 @@ const Dashboard = () => {
         e.preventDefault();
         setCargandoAcuerdo(true);
         try {
-            const res = await fetch('http://localhost:4000/api/acuerdos', {
+            const res = await fetch('https://adi-santa-rita.onrender.com/api/acuerdos', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                 body: JSON.stringify({ titulo: tituloAcuerdo, fechaAcuerdo, puntos: puntosAcuerdo })
@@ -407,7 +407,7 @@ const Dashboard = () => {
     const handleEliminarAcuerdo = async (id) => {
         if (!window.confirm("¿Seguro de quitar este acuerdo de la vista pública?")) return;
         try {
-            const res = await fetch(`http://localhost:4000/api/acuerdos/${id}`, {
+            const res = await fetch(`https://adi-santa-rita.onrender.com/api/acuerdos/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
@@ -420,7 +420,7 @@ const Dashboard = () => {
         e.preventDefault();
         setCargandoTaller(true);
         try {
-            const res = await fetch('http://localhost:4000/api/talleres', {
+            const res = await fetch('https://adi-santa-rita.onrender.com/api/talleres', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                 body: JSON.stringify({ titulo: tituloTaller, descripcion: descripcionTaller, icono: iconoTaller })
@@ -442,7 +442,7 @@ const Dashboard = () => {
     const handleEliminarTaller = async (id) => {
         if (!window.confirm("¿Seguro? Se eliminará el taller y todas las inscripciones asociadas a él.")) return;
         try {
-            const res = await fetch(`http://localhost:4000/api/talleres/${id}`, {
+            const res = await fetch(`https://adi-santa-rita.onrender.com/api/talleres/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
@@ -455,7 +455,7 @@ const Dashboard = () => {
     const handleEliminarHabitante = async (id) => {
         if (!window.confirm("¿Confirmas que deseas dar de baja a esta persona del padrón comunal (mudanza/fallecimiento)?")) return;
         try {
-            const res = await fetch(`http://localhost:4000/api/habitantes/${id}`, {
+            const res = await fetch(`https://adi-santa-rita.onrender.com/api/habitantes/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
@@ -474,7 +474,7 @@ const Dashboard = () => {
         e.preventDefault();
         setCargandoCuentas(true);
         try {
-            const res = await fetch('http://localhost:4000/api/usuarios/invitar', {
+            const res = await fetch('https://adi-santa-rita.onrender.com/api/usuarios/invitar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                 body: JSON.stringify({ nombre: nombreCuenta, email: emailCuenta, role: rolCuenta })
@@ -496,7 +496,7 @@ const Dashboard = () => {
     const handleEliminarCuenta = async (id) => {
         if (!window.confirm("¿Seguro de revocar el acceso a este usuario? Ya no podrá entrar al panel.")) return;
         try {
-            const res = await fetch(`http://localhost:4000/api/usuarios/usuarios/${id}`, {
+            const res = await fetch(`https://adi-santa-rita.onrender.com/api/usuarios/usuarios/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
