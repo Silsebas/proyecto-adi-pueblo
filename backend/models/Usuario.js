@@ -19,7 +19,7 @@ const UsuarioSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['super_admin', 'admin'],
+        enum: ['super_admin', 'admin', 'presidente', 'vicepresidente', 'secretario', 'tesorero', 'fiscal', 'vocal'],
         default: 'admin'
     },
     isActivated: {
@@ -31,6 +31,15 @@ const UsuarioSchema = new mongoose.Schema({
     },
     tokenExpiration: {
         type: Date
+    },
+    debeCambiarPassword: { 
+        type: Boolean, default: true 
+    }, // Nace en true por seguridad
+    tokenRecuperacion: { 
+        type: String 
+    }, // Para cuando le dan a "Olvidé mi contraseña"
+    expiracionToken: { 
+        type: Date 
     }
 }, { timestamps: true });
 

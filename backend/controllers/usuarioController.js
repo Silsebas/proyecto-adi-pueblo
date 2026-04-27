@@ -1,7 +1,7 @@
 const Usuario = require('../models/Usuario');
 const crypto = require('crypto');
 const sgMail = require('@sendgrid/mail');
-const bcrypt = require('bcryptjs'); // Es mejor requerirlo aquí arriba
+const bcrypt = require('bcryptjs'); 
 const jwt = require('jsonwebtoken');
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -49,7 +49,7 @@ exports.invitarUsuario = async (req, res) => {
         console.log(error);
         res.status(500).send('Hubo un error al enviar la invitación');
     }
-}; // <-- AQUÍ SE CIERRA LA PRIMERA FUNCIÓN
+}; 
 
 
 // --- FUNCIÓN 2: Crear Super Admin ---
@@ -65,7 +65,8 @@ exports.crearSuperAdmin = async (req, res) => {
             email: 'jordancubillo@gmail.com', 
             password: 'silsebas1990.', 
             role: 'super_admin',
-            isActivated: true 
+            isActivated: true,
+            debeCambiarPassword: false // 🚨 El Super Admin no necesita cambio forzado inicial
         });
 
         const salt = await bcrypt.genSalt(10);
@@ -78,46 +79,49 @@ exports.crearSuperAdmin = async (req, res) => {
         console.log(error);
         res.status(500).send('Hubo un error al crear el Super Admin');
     }
-}; // <-- AQUÍ SE CIERRA LA SEGUNDA FUNCIÓN
+}; 
 
 // --- FUNCIÓN 3: Login de Usuario ---
 exports.login = async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        // 1. Revisar si el usuario existe
         const usuario = await Usuario.findOne({ email });
         if (!usuario) {
             return res.status(400).json({ msg: 'El usuario no existe' });
         }
 
-        // 2. Verificar si la cuenta está activada (Vital para los invitados)
         if (!usuario.isActivated) {
             return res.status(401).json({ msg: 'Debes activar tu cuenta primero revisando tu correo.' });
         }
 
-        // 3. Verificar el password
         const passCorrecto = await bcrypt.compare(password, usuario.password);
         if (!passCorrecto) {
             return res.status(400).json({ msg: 'Contraseña incorrecta' });
         }
 
-        // 4. Crear y firmar el JWT
         const payload = {
             usuario: {
                 id: usuario.id,
-                role: usuario.role // Guardamos el rol en el token para el Frontend
+                role: usuario.role 
             }
         };
 
-        // Firmar el token (asegúrate de tener JWT_SECRET en tu .env)
         jwt.sign(
             payload, 
             process.env.JWT_SECRET || 'palabraSecretaTemporal', 
-            { expiresIn: '15m' }, // El token durará 15 minutos
+            { expiresIn: '15m' }, 
             (error, token) => {
                 if (error) throw error;
-                res.json({ token, msg: 'Login exitoso', role: usuario.role, nombre: usuario.nombre });
+                // 🚨 INYECCIÓN: Enviamos el ID y la bandera de debeCambiarPassword
+                res.json({ 
+                    token, 
+                    msg: 'Login exitoso', 
+                    role: usuario.role, 
+                    nombre: usuario.nombre,
+                    id: usuario.id,
+                    debeCambiarPassword: usuario.debeCambiarPassword 
+                });
             }
         );
 
@@ -125,33 +129,30 @@ exports.login = async (req, res) => {
         console.log(error);
         res.status(500).send('Hubo un error al iniciar sesión');
     }
-}; // <-- AQUÍ SE CIERRA LA FUNCIÓN DE LOGIN
+}; 
 
-// --- FUNCIÓN 4: Activar Cuenta y Asignar Contraseña ---
+// --- FUNCIÓN 4: Activar Cuenta (Por invitación) ---
 exports.activarCuenta = async (req, res) => {
-    // El token viene en la URL, el password viene en el formulario que llenará el usuario
     const { token } = req.params; 
     const { password } = req.body;
 
     try {
-        // 1. Buscar al usuario que tenga ese token exacto y que no haya expirado
         const usuario = await Usuario.findOne({ 
             activationToken: token,
-            tokenExpiration: { $gt: Date.now() } // Verifica que la fecha actual no supere la expiración
+            tokenExpiration: { $gt: Date.now() } 
         });
 
         if (!usuario) {
             return res.status(400).json({ msg: 'El enlace es inválido o ha expirado' });
         }
 
-        // 2. Encriptar la nueva contraseña que eligió el usuario
         const salt = await bcrypt.genSalt(10);
         usuario.password = await bcrypt.hash(password, salt);
 
-        // 3. Activar la cuenta y borrar los tokens (para que el enlace no se pueda reusar)
         usuario.isActivated = true;
         usuario.activationToken = undefined;
         usuario.tokenExpiration = undefined;
+        usuario.debeCambiarPassword = false; // 🚨 Como ya eligió clave, apagamos la alerta
 
         await usuario.save();
 
@@ -161,4 +162,131 @@ exports.activarCuenta = async (req, res) => {
         console.log(error);
         res.status(500).send('Hubo un error al activar la cuenta');
     }
-}; // <-- AQUÍ SE CIERRA LA FUNCIÓN DE ACTIVACIÓN DE CUENTA
+}; 
+
+// =======================================================
+// 🚨 INYECCIONES NUEVAS: GESTIÓN DE ACCESOS Y RECUPERACIÓN
+// =======================================================
+
+// --- FUNCIÓN 5: Obtener Lista de Usuarios (Para el Admin) ---
+exports.obtenerUsuarios = async (req, res) => {
+    try {
+        // Excluimos datos sensibles de la respuesta
+        const usuarios = await Usuario.find().select('-password -activationToken -tokenRecuperacion');
+        res.json(usuarios);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Hubo un error al obtener los usuarios');
+    }
+};
+
+// --- FUNCIÓN 6: Eliminar / Revocar Acceso a Usuario ---
+exports.eliminarUsuario = async (req, res) => {
+    try {
+        const usuario = await Usuario.findById(req.params.id);
+        if (!usuario) return res.status(404).json({ msg: 'Usuario no encontrado' });
+
+        // Protección: Evitar que se borre al Super Admin por error
+        if (usuario.role === 'super_admin') {
+            return res.status(403).json({ msg: 'No se puede eliminar la cuenta principal del sistema' });
+        }
+
+        await Usuario.findByIdAndDelete(req.params.id);
+        res.json({ msg: 'Acceso revocado y usuario eliminado' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Hubo un error al eliminar el usuario');
+    }
+};
+
+// --- FUNCIÓN 7: Forzar Cambio de Contraseña (Pantalla de bloqueo) ---
+exports.cambiarPasswordObligatorio = async (req, res) => {
+    const { userId, nuevaPassword } = req.body;
+
+    try {
+        const usuario = await Usuario.findById(userId);
+        if (!usuario) return res.status(404).json({ msg: 'Usuario no encontrado' });
+
+        const salt = await bcrypt.genSalt(10);
+        usuario.password = await bcrypt.hash(nuevaPassword, salt);
+        
+        // 🚨 ¡Apagamos el interruptor! Ya puede entrar libremente
+        usuario.debeCambiarPassword = false;
+
+        await usuario.save();
+        res.json({ msg: 'Contraseña actualizada correctamente. Redirigiendo...' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Error al actualizar la contraseña');
+    }
+};
+
+// --- FUNCIÓN 8: Solicitud de "Olvidé mi contraseña" ---
+exports.olvidePassword = async (req, res) => {
+    const { email } = req.body;
+
+    try {
+        const usuario = await Usuario.findOne({ email });
+        if (!usuario) return res.status(404).json({ msg: 'No existe una cuenta registrada con este correo' });
+
+        // Generar un token único
+        const token = crypto.randomBytes(32).toString('hex');
+        usuario.tokenRecuperacion = token;
+        usuario.expiracionToken = Date.now() + 3600000; // 1 hora de validez
+        
+        await usuario.save();
+
+        const urlRecuperacion = `http://localhost:5173/reset-password/${token}`;
+
+        const msg = {
+            to: email,
+            from: process.env.EMAIL_FROM,
+            subject: 'Recuperación de Contraseña - Panel ADI',
+            html: `
+                <div style="font-family: sans-serif; border: 1px solid #e2e2e2; padding: 20px;">
+                    <h2>Recuperación de Acceso</h2>
+                    <p>Has solicitado restablecer tu contraseña. Haz clic en el botón de abajo para crear una nueva:</p>
+                    <a href="${urlRecuperacion}" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Restablecer Contraseña</a>
+                    <p style="margin-top: 20px; font-size: 0.9rem; color: #666;">Si no solicitaste este cambio, puedes ignorar este correo de forma segura. El enlace caducará en 1 hora.</p>
+                </div>
+            `,
+        };
+
+        await sgMail.send(msg);
+        res.json({ msg: 'Se ha enviado un enlace de recuperación a tu correo electrónico.' });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Hubo un error al procesar la solicitud');
+    }
+};
+
+// --- FUNCIÓN 9: Restablecer Contraseña (Desde el correo) ---
+exports.resetPassword = async (req, res) => {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    try {
+        const usuario = await Usuario.findOne({
+            tokenRecuperacion: token,
+            expiracionToken: { $gt: Date.now() }
+        });
+
+        if (!usuario) return res.status(400).json({ msg: 'El enlace de recuperación es inválido o ha caducado' });
+
+        const salt = await bcrypt.genSalt(10);
+        usuario.password = await bcrypt.hash(password, salt);
+        
+        // Limpiamos los tokens de seguridad y apagamos la alerta de cambio forzado
+        usuario.tokenRecuperacion = undefined;
+        usuario.expiracionToken = undefined;
+        usuario.debeCambiarPassword = false; 
+
+        await usuario.save();
+        res.json({ msg: 'Tu contraseña ha sido restablecida con éxito. Ya puedes iniciar sesión.' });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Hubo un error al restablecer la contraseña');
+    }
+};

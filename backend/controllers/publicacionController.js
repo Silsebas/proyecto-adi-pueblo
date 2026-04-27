@@ -3,6 +3,11 @@ const Publicacion = require('../models/Publicacion');
 // 1. Crear una nueva publicación (Solo Junta)
 exports.crearPublicacion = async (req, res) => {
     try {
+        // NUEVO: Limite de 6 noticias
+        const total = await Publicacion.countDocuments();
+        if (total >= 6) {
+            return res.status(400).json({ msg: 'Debe eliminar una publicacion, maximo 6' });
+        }
         const publicacion = new Publicacion(req.body);
         publicacion.autor = req.usuario.id; 
 
