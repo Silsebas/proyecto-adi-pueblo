@@ -420,3 +420,154 @@ h2 {
     margin-bottom: 15px;    /* Da un pequeño espacio entre la foto y el nombre */
     box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* (Opcional) Le da una sombrita profesional */
 }
+/* ==========================================================================
+   🚨 NUEVA SECCIÓN: ACUERDOS PÚBLICOS DE JUNTA 🚨
+   ========================================================================== */
+
+.transparencia-section {
+    padding: 60px 2rem;
+    text-align: center;
+}
+
+.grid-acuerdos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 25px;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.tarjeta-acuerdo {
+    background-color: var(--color-white);
+    border-left: 5px solid var(--color-primary); /* Borde verde lateral distintivo */
+    border-radius: 6px;
+    padding: 25px;
+    box-shadow: var(--shadow-soft);
+    text-align: left;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.tarjeta-acuerdo:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-strong);
+}
+
+.acuerdo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+.acuerdo-fecha {
+    font-weight: bold;
+    color: var(--color-dark);
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #e9ecef;
+    padding: 6px 12px;
+    border-radius: 20px;
+}
+
+.acuerdo-titulo {
+    color: var(--color-primary);
+    font-size: 1.3rem;
+    margin: 0 0 15px 0;
+}
+
+.acuerdo-lista {
+    margin: 0;
+    padding-left: 20px; /* Sangría para las viñetas */
+    color: var(--color-gray-dark);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.acuerdo-lista li {
+    margin-bottom: 8px; /* Espacio entre los puntos acordados */
+}
+
+/* Ajuste móvil para Acuerdos */
+@media (max-width: 768px) {
+    .grid-acuerdos {
+        grid-template-columns: 1fr;
+    }
+}
+/* ==========================================================================
+   🚨 NUEVOS ESTILOS: BOTÓN CARGAR MÁS Y VENTANA MODAL DE TALLERES
+   ========================================================================== */
+
+/* Botón de Paginación */
+.btn-cargar-mas {
+    display: block;
+    margin: 40px auto 0 auto;
+    padding: 12px 30px;
+    background-color: transparent;
+    color: var(--color-dark);
+    border: 2px solid var(--color-primary);
+    border-radius: 25px; /* Bordes redondeados modernos */
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-cargar-mas:hover {
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-soft);
+}
+
+/* Fondo oscuro que tapa toda la pantalla (Modal Overlay) */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.7); /* Oscurece el fondo al 70% */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Asegura que quede por encima de todo el sitio */
+}
+
+/* La caja blanca del formulario */
+.modal-content {
+    background-color: var(--color-white);
+    width: 90%;
+    max-width: 450px;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    position: relative;
+    animation: aparecerModal 0.3s ease-out;
+}
+
+/* Animación de entrada suave para el modal */
+@keyframes aparecerModal {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Botón de cerrar la ventana (la X arriba a la derecha) */
+.modal-cerrar {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #999;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.modal-cerrar:hover {
+    color: #dc3545; /* Se pone rojo al pasar el mouse */
+}
