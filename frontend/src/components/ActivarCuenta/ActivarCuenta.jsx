@@ -13,10 +13,14 @@ const ActivarCuenta = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setCargando(true);
-        setError(''); setMensaje('');
+        setError(''); setMensajeExito(''); // Nota: asegúrate de usar setMensaje o setMensajeExito según tu estado
 
         try {
-            const respuesta = await fetch(`https://adi-santa-rita.onrender.com/api/usuarios/activar/${token}`, {
+            // 🚨 DETECTAR LA RUTA CORRECTA SEGÚN LA URL
+            const esRecuperacion = window.location.pathname.includes('reset-password');
+            const rutaFinal = esRecuperacion ? 'reset-password' : 'activar';
+
+            const respuesta = await fetch(`https://adi-santa-rita.onrender.com/api/usuarios/${rutaFinal}/${token}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ password })
@@ -25,10 +29,10 @@ const ActivarCuenta = () => {
             const data = await respuesta.json();
 
             if (respuesta.ok) {
-                setMensaje('✅ ¡Cuenta activada con éxito! Redirigiendo al Login...');
+                setMensaje(esRecuperacion ? '✅ Contraseña restablecida con éxito.' : '✅ ¡Cuenta activada con éxito!');
                 setTimeout(() => navigate('/login'), 3000);
             } else {
-                setError(`❌ ${data.msg || 'Error al activar'}`);
+                setError(`❌ ${data.msg || 'Error en la operación'}`);
             }
         } catch (err) {
             setError('❌ Error de conexión con el servidor.');

@@ -13,8 +13,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/activar-cuenta/:token" element={<ActivarCuenta />} />
-        <Route path="/reset-password/:token" element={<NuevoPassword />} />
-        
+        <Route path="/reset-password/:token" element={<ActivarCuenta />} />       
       </Routes>
     </Router>
   );
