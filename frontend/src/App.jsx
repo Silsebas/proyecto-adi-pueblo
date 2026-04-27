@@ -3,7 +3,6 @@ import Home from './components/Home/Home';
 import Login from './components/Login/Login'; 
 import Dashboard from './components/Dashboard/Dashboard';
 import ActivarCuenta from './components/ActivarCuenta/ActivarCuenta';
-import NuevoPassword from './components/Login/NuevoPassword'; 
 
 function App() {
   return (
@@ -12,8 +11,11 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        
+        {/* Usamos el mismo componente ActivarCuenta para ambos flujos */}
         <Route path="/activar-cuenta/:token" element={<ActivarCuenta />} />
-        <Route path="/reset-password/:token" element={<ActivarCuenta />} />       
+        <Route path="/reset-password/:token" element={<ActivarCuenta />} />
+        
       </Routes>
     </Router>
   );
