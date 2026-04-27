@@ -26,7 +26,7 @@ exports.invitarUsuario = async (req, res) => {
 
         await usuario.save();
 
-        const urlActivacion = `http://localhost:5173/activar-cuenta/${token}`;
+       const urlActivacion = `${process.env.FRONTEND_URL}/activar-cuenta/${token}`;
 
         const msg = {
             to: email,
@@ -236,7 +236,7 @@ exports.olvidePassword = async (req, res) => {
         
         await usuario.save();
 
-        const urlRecuperacion = `http://localhost:5173/reset-password/${token}`;
+        const urlRecuperacion = `${process.env.FRONTEND_URL}/reset-password/${token}`;
 
         const msg = {
             to: email,
