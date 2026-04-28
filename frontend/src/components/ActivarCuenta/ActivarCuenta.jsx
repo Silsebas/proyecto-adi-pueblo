@@ -13,7 +13,8 @@ const ActivarCuenta = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setCargando(true);
-        setError(''); setMensajeExito(''); // Nota: asegúrate de usar setMensaje o setMensajeExito según tu estado
+        setError(''); 
+        setMensaje(''); // Nota: asegúrate de usar setMensaje o setMensajeExito según tu estado
 
         try {
             // 🚨 DETECTAR LA RUTA CORRECTA SEGÚN LA URL
