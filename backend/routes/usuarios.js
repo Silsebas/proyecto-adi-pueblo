@@ -10,7 +10,7 @@ router.post('/setup', usuarioController.crearSuperAdmin);
 router.post('/login', usuarioController.login);
 
 // Ruta para invitar (PROTEGIDA: Requiere Token y ser Super Admin)
-//router.post('/invitar', verificarToken, esSuperAdmin, usuarioController.invitarUsuario);
+router.post('/invitar', verificarToken, esSuperAdmin, usuarioController.invitarUsuario);
 
 // Rutas de Administración de Usuarios (Deberían estar protegidas por el token)
 router.get('/usuarios', verificarToken, usuarioController.obtenerUsuarios);
