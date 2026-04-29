@@ -9,7 +9,12 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 // --- FUNCIÓN 1: Invitar Usuario ---
 exports.invitarUsuario = async (req, res) => {
     const { nombre, email, role } = req.body;
-
+    
+    //CORRECCIÓN: nunca permitir crear otro super_admin por invitación
+    const rolesPermitidos = ['admin', 'secretario', 'vocal', 'habitante'];
+    if (!rolesPermitidos.includes(role)) {
+        return res.status(403).json({ msg: 'No puedes asignar ese rol' });
+    }
     try {
         let usuario = await Usuario.findOne({ email });
         if (usuario) return res.status(400).json({ msg: 'El usuario ya existe' });
