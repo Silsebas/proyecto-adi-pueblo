@@ -5,3 +5,10 @@ frontend/node_modules/
 backend/.env
 frontend/.env
 dist/
+
+# Archivos del sistema operativo (Mac/Windows)
+.DS_Store
+Thumbs.db
+
+# Archivos de VS Code
+.vscode/
