@@ -13,7 +13,10 @@ const ActaSchema = mongoose.Schema({
     // NUEVO: Borrado Lógico
     estado: { type: String, enum: ['Activo', 'Eliminado'], default: 'Activo' },
     eliminadoPor: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario' },
-    fechaEliminacion: { type: Date }
+    fechaEliminacion: { 
+                        type: Date, 
+                        default: () => new Date(Date.now() - 6 * 60 * 60 * 1000)
+                        }
 }, {
     // Mongoose crea automáticamente 'createdAt' (creación) y 'updatedAt' (modificación)
     timestamps: true 
