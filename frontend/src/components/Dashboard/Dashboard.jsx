@@ -893,7 +893,7 @@ const Dashboard = () => {
                                         <option value="tesorero">Tesorero/a</option>
                                         <option value="fiscal">Fiscal</option>
                                         <option value="vocal">Vocal / Lector</option>
-                                        {usuario.role === 'super_admin' && <option value="super_admin">Super Admin (TI)</option>}
+                                        {/*{usuario.role === 'super_admin' && <option value="super_admin">Super Admin (TI)</option>}*/}
                                     </select>
                                 </div>
                             </div>
